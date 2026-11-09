@@ -1,0 +1,7 @@
+.tmp/
+.log/
+__pycache__/
+*.pyc
+*.deb
+*.asc
+*.gpg

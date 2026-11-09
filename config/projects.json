@@ -1,0 +1,32 @@
+{
+  "owner": "Pitriss",
+  "repository": "debian-repo",
+  "keep_versions": 2,
+  "max_site_bytes": 950000000,
+  "max_asset_bytes": 100000000,
+  "max_release_pages": 10,
+  "architectures": ["amd64", "arm64", "armhf"],
+  "distributions": ["trixie", "stretch"],
+  "projects": [
+    {
+      "github": "Pitriss/kencoder",
+      "packages": ["kencoder", "encoder"],
+      "distributions": ["trixie"]
+    },
+    {
+      "github": "Pitriss/pfx-split-qt",
+      "packages": ["pfx-split"],
+      "distributions": ["trixie"]
+    },
+    {
+      "github": "Pitriss/reddit2tg",
+      "packages": ["reddit2tg"],
+      "distributions": ["trixie", "stretch"]
+    },
+    {
+      "github": "Pitriss/Jira-2-Teams",
+      "packages": ["jira2teams"],
+      "distributions": ["trixie"]
+    }
+  ]
+}

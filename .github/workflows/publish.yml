@@ -1,0 +1,103 @@
+name: Publish signed Debian APT repository
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: debian-repository-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify signing secret
+        env:
+          REPO_KEY: ${{ secrets.APT_REPO_GPG_PRIVATE_KEY }}
+        run: |
+          test -n "$REPO_KEY" || { echo 'Missing APT_REPO_GPG_PRIVATE_KEY secret' >&2; exit 1; }
+
+      - name: Run offline regression tests
+        run: python3 -m unittest discover -v -s tests -p 'test*.py'
+
+      - name: Import private signing key
+        env:
+          REPO_KEY: ${{ secrets.APT_REPO_GPG_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -m 700 -p "$RUNNER_TEMP/apt-repo-gnupg"
+          printf '%s\n' "$REPO_KEY" | gpg --homedir "$RUNNER_TEMP/apt-repo-gnupg" --batch --import
+          echo "GNUPGHOME=$RUNNER_TEMP/apt-repo-gnupg" >> "$GITHUB_ENV"
+
+      - name: Generate and verify repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/site
+          python3 scripts/build_repo.py --config config/projects.json --output .tmp/site
+          python3 scripts/verify_repo.py --site .tmp/site
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload immutable Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: .tmp/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  keep-schedule-active:
+    # Scheduled workflows in public GitHub repos expire after 60 days of inactivity.
+    # One tiny central-repo commit every ~40 days prevents that (never commits .deb).
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Check out central repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Create minimal activity every 40 days
+        run: |
+          set -euo pipefail
+          stamp='.github/last-scheduled-activity'
+          now="$(date -u +%s)"
+          if test -f "$stamp"; then
+            last="$(date -u -d "$(cat "$stamp")" +%s 2>/dev/null || echo 0)"
+          else
+            last=0
+          fi
+          if (( now - last < 40 * 86400 )); then
+            echo 'No activity marker needed yet'
+            exit 0
+          fi
+          date -u +%Y-%m-%d > "$stamp"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$stamp"
+          git commit -m 'chore: keep repository schedules active'
+          git push origin HEAD:main
