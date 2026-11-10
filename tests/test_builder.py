@@ -18,12 +18,12 @@ sys.modules[spec.name] = builder
 spec.loader.exec_module(builder)
 
 
-def dummy_asset(name: str, version: str, release_pre=False, ts="2026-11-09T09:00:00Z", size=25):
+def dummy_asset(name: str, version: str, release_pre=False, ts="2026-11-09T09:00:00Z", size=25, repo="reddit2tg"):
     return {
         "tag_name": ("v" + version), "prerelease": release_pre, "draft": False,
         "published_at": ts,
         "assets": [{"name": name, "size": size,
-                    "browser_download_url": f"https://github.com/Pitriss/reddit2tg/releases/download/v{version}/{name}"}]
+                    "browser_download_url": f"https://github.com/Pitriss/{repo}/releases/download/v{version}/{name}"}]
     }
 
 
@@ -31,6 +31,7 @@ class SelectionTests(unittest.TestCase):
     def setUp(self):
         self.cfg = builder.config_load(ROOT / "config" / "projects.json")
         self.project = next(p for p in self.cfg["projects"] if p["github"] == "Pitriss/reddit2tg")
+        self.widget = next(p for p in self.cfg["projects"] if p["github"] == "Pitriss/app-memory-bar")
 
     def test_debian_version_order(self):
         self.assertGreater(builder.version_cmp("1.0.1", "1.0.0"), 0)
@@ -55,6 +56,23 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(sorted(by_group[("stretch-testing", "arm64")]), ["0.4.0-alpha8", "0.4.0-alpha9"])
         self.assertNotIn(("stretch", "amd64"), by_group)
         self.assertNotIn(("stretch-testing", "amd64"), by_group)
+
+    def test_widget_all_arch_ignores_plasmoid_only_releases(self):
+        releases = [
+            dummy_asset("plasma-widget-app-memory-bar_0.10.3_all.deb", "0.10.3", repo="app-memory-bar"),
+            dummy_asset("app-memory-bar-0.10.2.plasmoid", "0.10.2", repo="app-memory-bar")
+        ]
+        selected = builder.choose_latest_two(builder.parse_candidates(self.widget, releases, self.cfg))
+        self.assertEqual(len(selected), 1)
+        self.assertEqual((selected[0].package, selected[0].version, selected[0].arch, selected[0].suite),
+                         ("plasma-widget-app-memory-bar", "0.10.3", "all", "trixie"))
+
+    def test_widget_retains_two_all_arch_versions(self):
+        releases = [dummy_asset(f"plasma-widget-app-memory-bar_{v}_all.deb", v, repo="app-memory-bar")
+                    for v in ("0.10.3", "0.10.4", "0.10.5")]
+        selected = builder.choose_latest_two(builder.parse_candidates(self.widget, releases, self.cfg))
+        self.assertEqual([c.version for c in selected], ["0.10.5", "0.10.4"])
+        self.assertTrue(all(c.arch == "all" and c.suite == "trixie" for c in selected))
 
     def test_prerelease_filename_and_control_versions(self):
         self.assertTrue(builder.filename_version_matches_control("0.4.0-alpha8", "0.4.0~alpha8"))
@@ -116,6 +134,7 @@ class FullBuildTests(unittest.TestCase):
             configs = [("kencoder", "kencoder", "trixie", "stable", "amd64", "0.3.0"),
                        ("encoder", "kencoder", "trixie", "stable", "amd64", "0.2.1"),
                        ("pfx-split", "pfx-split-qt", "trixie", "stable", "amd64", "0.1.1-1"),
+                       ("plasma-widget-app-memory-bar", "app-memory-bar", "trixie", "stable", "all", "0.10.3"),
                        ("jira2teams", "Jira-2-Teams", "trixie", "stable", "amd64", "0.5.1"),
                        ("reddit2tg", "reddit2tg", "trixie", "stable", "amd64", "0.3.1"),
                        ("reddit2tg", "reddit2tg", "trixie", "stable", "amd64", "0.3.0"),
@@ -145,6 +164,10 @@ class FullBuildTests(unittest.TestCase):
                 site = root / "site"
                 builder.build(cfg, candidates, site, downloader)
                 self.assertIn("Version: 0.4.0~alpha8", (site / "dists" / "trixie-testing" / "main" / "binary-arm64" / "Packages").read_text())
+                for arch in ("amd64", "arm64", "armhf"):
+                    index = (site / "dists" / "trixie" / "main" / f"binary-{arch}" / "Packages").read_text()
+                    self.assertIn("Package: plasma-widget-app-memory-bar\n", index)
+                    self.assertIn("Architecture: all\n", index)
                 subprocess.run([sys.executable, str(ROOT / "scripts" / "verify_repo.py"), "--site", str(site)],
                                check=True, capture_output=True)
                 key = root / "signing-key.asc"

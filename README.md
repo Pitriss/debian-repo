@@ -1,6 +1,6 @@
 # Pitriss Debian APT repository
 
-Samostatný veřejný APT repozitář pro čtyři výslovně schválené projekty. Balíčky se **čtou pouze z GitHub Releases**, do zdrojových repozitářů se nic nezapisuje. Repozitář se publikuje přes **GitHub Pages / GitHub Actions**, nikoli commitem `.deb` do Git historie.
+Samostatný veřejný APT repozitář pro pět výslovně schválených projektů. Balíčky se **čtou pouze z GitHub Releases**, do zdrojových repozitářů se nic nezapisuje. Repozitář se publikuje přes **GitHub Pages / GitHub Actions**, nikoli commitem `.deb` do Git historie.
 
 ## Schválené projekty
 
@@ -10,10 +10,12 @@ Samostatný veřejný APT repozitář pro čtyři výslovně schválené projekt
 | `Pitriss/pfx-split-qt` | `pfx-split` | trixie |
 | `Pitriss/reddit2tg` | `reddit2tg` | trixie + Stretch varianty |
 | `Pitriss/Jira-2-Teams` | `jira2teams` | trixie |
+| `Pitriss/app-memory-bar` | `plasma-widget-app-memory-bar` | trixie (Architecture: all) |
 
 ## Pravidla repozitáře
 
 - Pro každou kombinaci **Package + architektura + distribuce + stable/testing** zůstávají **poslední dvě různé Debian verze** (porovnání `dpkg --compare-versions`). Opakovaně vydané stejné verze se neduplikují.
+- `plasma-widget-app-memory-bar` je architektury `all` a je indexován pro amd64, arm64 i armhf. Ke dni přidání obsahuje `.deb` pouze release `v0.10.3`; starší vydání mají jen `.plasmoid`, proto se předchozí `.deb` objeví až s dalším vydáním balíčku.
 - `trixie`: stabilní releasy; `trixie-testing`: alpha/beta/rc/prerelease. Testovací kanál je opt-in.
 - `stretch` a `stretch-testing`: jen výslovně označené soubory `*-stretch.deb` ze `reddit2tg`. Neoznačené balíčky nepovažujeme za kompatibilní se Stretchem.
 - Architektury indexů: `amd64`, `arm64`, `armhf`; balíčky s architekturou `all` se indexují pro všechny podporované architektury.

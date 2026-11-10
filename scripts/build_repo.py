@@ -366,7 +366,7 @@ def write_site(output: Path, config: dict, selected: list[Candidate]) -> None:
     site = """<!doctype html><html lang="en"><meta charset="utf-8">
 <title>Pitriss Debian Repository</title><meta name="viewport" content="width=device-width, initial-scale=1">
 <style>body{font:16px/1.5 system-ui,sans-serif;max-width:850px;margin:3rem auto;padding:0 1.5rem;background:#f8fafc;color:#1e293b}h1,h2{color:#0f172a}section{padding:.5rem 1rem;margin:1rem 0;border:1px solid #cbd5e1;border-radius:.6rem}code,pre{background:#e2e8f0;padding:.15rem .35rem;border-radius:.2rem;overflow:auto}a{color:#075985}</style>
-<h1>Pitriss Debian APT repository</h1><p>Public packages: kencoder, encoder, pfx-split, reddit2tg and jira2teams. Two newest Debian package versions per package, suite and architecture.</p>
+<h1>Pitriss Debian APT repository</h1><p>Packages from approved public GitHub Releases. Two newest Debian package versions per package, suite and architecture.</p>
 <p>Signed repository key: <a href="repo-signing-key.asc">repo-signing-key.asc</a></p>
 <p>For Debian 13 use <code>trixie</code>. Prereleases are opt-in via <code>trixie-testing</code>. Older Stretch builds are separate and limited to packages explicitly built for Stretch.</p>
 """ + "\n".join(cards) + "\n<p>Sources and installation instructions: <a href=\"https://github.com/Pitriss/debian-repo\">GitHub</a></p></html>\n"

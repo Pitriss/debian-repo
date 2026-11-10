@@ -27,6 +27,11 @@
       "github": "Pitriss/Jira-2-Teams",
       "packages": ["jira2teams"],
       "distributions": ["trixie"]
+    },
+    {
+      "github": "Pitriss/app-memory-bar",
+      "packages": ["plasma-widget-app-memory-bar"],
+      "distributions": ["trixie"]
     }
   ]
 }
